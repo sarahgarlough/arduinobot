@@ -1,0 +1,172 @@
+// wired connections
+
+#define HG7881_B_IA 10 // D10 --> Motor B Input A --> MOTOR B +
+#define HG7881_B_IB 9 // D11 --> Motor B Input B --> MOTOR B -
+
+#define HG7881_A_IA 5 //D6 - Motor A input A
+#define HG7881_A_IB 6 //D5 - Motor A input B
+
+// functional connections
+#define Motor_L_PWM HG7881_B_IA // Motor B PWM Speed
+#define Motor_L_DIR HG7881_B_IB // Motor B Direction
+
+#define Motor_R_PWM HG7881_A_IA // Motor A PWM Speed
+#define Motor_R_DIR HG7881_A_IB // Motor A Direction
+
+#define DEFAULT_SPEED 120 
+
+//find this experimentally
+#define ULTRASONIC_COLLISION 1
+
+//also should probbly be experimented with
+#define FRONT_LEFT_TURN_HYSTERESIS 10
+
+#define ONLY_RIGHT_HYSTERESIS 250
+
+#define SOUND 0.7
+#define allowDist 4 //desired distance from wall
+
+//ultra pins
+#define trig 13
+
+#define left 12
+#define centre 2
+#define right 11
+
+//current reading
+int cLeft;
+int cRight;
+int tempV;
+
+
+
+
+
+
+/*
+  Sensor Layout
+        (3)
+    (1)   (2)
+    -----------
+    |         |
+Motor L |   Bot   | Motor R
+    |         |
+    -----------
+*/
+
+
+
+void forwardMotorR(int speed){
+  digitalWrite(Motor_R_DIR, HIGH);
+  analogWrite(Motor_R_PWM, 255-speed);
+}
+
+void reverseMotorR(int speed){
+  digitalWrite(Motor_R_DIR, LOW);
+  analogWrite(Motor_R_PWM, speed);
+}
+
+void forwardMotorL(int speed){
+  digitalWrite(Motor_L_DIR, HIGH);
+  analogWrite(Motor_L_PWM, 255-speed);
+}
+
+void forward(int speedl, int speedr){
+  forwardMotorR(speedl+50);
+  forwardMotorL(speedr+50);
+}
+
+void rev(int speedl, int speedr){
+  reverseMotorR(speedl);
+  reverseMotorL(speedr);
+}
+
+void reverseMotorL(int speed){
+  digitalWrite(Motor_L_DIR, LOW);
+  analogWrite(Motor_L_PWM, speed);
+}
+
+void stopAllMotors(){
+  digitalWrite(Motor_R_DIR, LOW);
+  digitalWrite(Motor_R_PWM, LOW);
+  digitalWrite(Motor_L_DIR, LOW);
+  digitalWrite(Motor_L_PWM, LOW);
+
+}
+
+void readUltra ()
+{
+  digitalWrite(trig, LOW);
+  delayMicroseconds(2);
+  
+  //send wave for 10 ms
+  digitalWrite(trig, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig, LOW);
+  
+  // read dist
+  cLeft= pulseIn(left, HIGH) * SOUND;
+  Serial.println(cLeft);
+  delay(500);
+  
+  digitalWrite(trig, LOW);
+  delayMicroseconds(2);
+  
+  //send wave for 10 ms
+  digitalWrite(trig, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig, LOW);
+  cRight= pulseIn(right, HIGH)*SOUND;
+  Serial.println(cRight);
+  delay(500);
+  //cCentre= (pulseIn(centre, HIGH)*SOUND);
+}
+
+
+void keepLeft()
+{
+  stopAllMotors();
+  readUltra();
+  //add forward ultra
+    if(cLeft<allowDist)
+    {
+      forward (cLeft,cRight);
+      delayMicroseconds(10);
+    }
+    else
+    {
+      forward(cLeft,cRight);
+      delayMicroseconds(10);
+    }
+ //else
+ {
+  cornerOut();
+ }
+
+}
+
+void cornerOut()
+{
+  stopAllMotors();
+  readUltra();
+  rev(cLeft,cRight);
+}
+
+void setup() {
+  //5,6,9.10 are outputs to the half bridge
+  pinMode(Motor_R_DIR, OUTPUT);
+  pinMode(Motor_R_PWM, OUTPUT);
+  pinMode(Motor_L_DIR, OUTPUT);
+  pinMode(Motor_L_PWM, OUTPUT);
+//ultra
+  pinMode(trig,OUTPUT);
+  pinMode(left, INPUT);
+  pinMode(right, INPUT);
+  pinMode(centre,INPUT);
+  Serial.begin(9600);
+}
+
+void loop() 
+{
+  keepLeft();
+}
