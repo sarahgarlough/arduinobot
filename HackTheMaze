@@ -141,6 +141,19 @@ void leg1()
     {
       //forward(DEFAULT_SPEED,DEFAULT_SPEED);
       readUltra();
+      //maybe go straigh?
+      if(cRight>>cLeft+10)
+      {
+        Serial.println("More right");
+      }
+      if(cLeft>>cRight+10)
+      {
+        Serial.println("More left");
+      }
+      else
+      {
+        Serial.println("Just Go");
+      }
     }
     Serial.println("Start the Turn");
   }
